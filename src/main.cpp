@@ -75,15 +75,13 @@ class MyApplication: public Platform::Application
 };
 
 MyApplication::MyApplication(const Arguments& arguments):
-    Platform::Application{arguments, Configuration{}.setTitle("Magnum Triangle Example")},
+    Platform::Application{arguments, Configuration{}.setTitle("Magnum Triangle Example").setSize({1280, 720})},
     _camera{_cameraObject}
 {
     MAGNUM_ASSERT_GL_VERSION_SUPPORTED(GL::Version::GL430);
     MAGNUM_ASSERT_GL_VERSION_SUPPORTED(GL::Version::GL440);
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::geometry_shader4);
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::draw_instanced);
-
-    setWindowSize({1280, 720});
 
     _camera
         .setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend)

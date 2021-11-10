@@ -10,6 +10,7 @@ corrade_add_resource(RESOURCES resources.conf)
 set(PROJECT_ROOT ${PROJECT_SOURCE_DIR}/src)
 set(SRC_FILES
     ${PROJECT_ROOT}/main.cpp
+    ${PROJECT_ROOT}/flecs/flecs.c
 )
 
 add_executable(MyApplication ${SRC_FILES} ${RESOURCES})
