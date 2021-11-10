@@ -4,3 +4,9 @@
 [submodule "magnum"]
 	path = magnum
 	url = https://github.com/mosra/magnum.git
+[submodule "imgui"]
+	path = imgui
+	url = https://github.com/ocornut/imgui
+[submodule "magnum-integration"]
+	path = magnum-integration
+	url = https://github.com/mosra/magnum-integration
