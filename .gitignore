@@ -3,3 +3,5 @@ build
 build*/
 *.kdev4
 *~
+MyApplication
+imgui.ini
