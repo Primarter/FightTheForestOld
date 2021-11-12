@@ -2,14 +2,15 @@
 #include <Magnum/Platform/GlfwApplication.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
 
-#include <Magnum/GL/Version.h>
-#include <Magnum/GL/Buffer.h>
-#include <Magnum/GL/Context.h>
+// #include <Magnum/GL/Version.h>
+// #include <Magnum/GL/Buffer.h>
+// #include <Magnum/GL/Context.h>
+
 // #include <Magnum/GL/Mesh.h>
-#include <Magnum/GL/Shader.h>
+// #include <Magnum/GL/Shader.h>
 #include <Magnum/GL/Extensions.h>
 #include <Magnum/GL/Renderer.h>
-#include <Magnum/GL/AbstractShaderProgram.h>
+// #include <Magnum/GL/AbstractShaderProgram.h>
 // #include <Magnum/Shaders/VertexColorGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Primitives/Cube.h>
@@ -34,15 +35,26 @@
 
 #include <map>
 
+#include "flecs/flecs.h"
+
 using namespace Magnum;
 using namespace Math::Literals;
 
 typedef SceneGraph::Object<SceneGraph::MatrixTransformation3D> Object3D;
 
+struct Transform
+{
+    Vector3 position;
+    Vector3 rotation;
+    Vector3 scale;
+};
+
 class MyApplication: public Platform::Application
 {
     public:
         explicit MyApplication(const Arguments& arguments);
+
+        void setup(void);
 
     private:
         void drawEvent() override;
@@ -59,6 +71,8 @@ class MyApplication: public Platform::Application
         void textInputEvent(TextInputEvent& event) override;
 
     private:
+        flecs::world _world;
+
         ImGuiIntegration::Context _imgui{NoCreate};
         std::map<KeyEvent::Key, bool> _keys;
 
@@ -83,6 +97,8 @@ MyApplication::MyApplication(const Arguments& arguments):
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::geometry_shader4);
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::draw_instanced);
 
+    setup();
+
     _camera
         .setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend)
         .setProjectionMatrix(Matrix4::perspectiveProjection(60.0_degf, 1.0f, 0.01f, 100.0f))
@@ -103,6 +119,27 @@ MyApplication::MyApplication(const Arguments& arguments):
     GL::Renderer::setClearColor(_clearColor);
 
     _meshCube = MeshTools::compile(Primitives::cubeSolid());
+}
+
+void MyApplication::setup()
+{
+    /* ECS initialization */
+    auto camera = _world.entity("Camera")
+        .set<Transform>({
+            {0.0, 0.0, 0.0},
+            {0.0, 0.0, 0.0},
+            {1.0, 1.0, 1.0}});
+        // .set<Object3D>();
+        // .set<SceneGraph::Camera3D>();
+
+        // _camera{_cameraObject}
+        // Object3D _cameraObject;
+        // SceneGraph::Camera3D _camera;
+
+        // _world.entity("MyEntity")
+        //     .set<Position>({0, 0})
+        //     .set<Velocity>({1, 1});
+    _world.set_target_fps(60);
 }
 
 void MyApplication::drawEvent()
