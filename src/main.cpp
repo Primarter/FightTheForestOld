@@ -29,8 +29,8 @@
 // #include <Magnum/MeshTools/CompressIndices.h>
 #include <Magnum/MeshTools/Compile.h>
 
-// #include <Corrade/Containers/Optional.h>
 #include <Corrade/Containers/Reference.h>
+// #include <Corrade/Containers/Optional.h>
 // #include <Corrade/Utility/Resource.h>
 
 #include <map>
@@ -204,7 +204,7 @@ void MyApplication::update()
 void MyApplication::drawEvent()
 {
     _elapsed = _sw.getElapsedTime();
-    if (_elapsed > 0.016666) {
+    if (_elapsed > 0.01666) {
         _sw.start();
 
         update();
