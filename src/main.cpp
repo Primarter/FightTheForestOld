@@ -13,6 +13,7 @@
 // #include <Magnum/Shaders/VertexColorGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Primitives/Cube.h>
+#include <Magnum/Primitives/Plane.h>
 #include <Magnum/Math/Color.h>
 // #include <Magnum/Math/Constants.h>
 
@@ -34,6 +35,11 @@
 
 #include <map>
 
+#include <chrono>
+#include <thread>
+
+#include "StopWatch.hpp"
+
 using namespace Magnum;
 using namespace Math::Literals;
 
@@ -43,6 +49,8 @@ class MyApplication: public Platform::Application
 {
     public:
         explicit MyApplication(const Arguments& arguments);
+
+        void update();
 
     private:
         void drawEvent() override;
@@ -64,7 +72,11 @@ class MyApplication: public Platform::Application
 
         Color4 _clearColor = {0.3, 0.3, 0.3, 1.0};
 
+        lib::StopWatch _sw;
+        double _elapsed;
+
         GL::Mesh _meshCube;
+        GL::Mesh _meshPlane;
         Shaders::PhongGL _shader;
 
         Object3D _cameraObject;
@@ -103,9 +115,12 @@ MyApplication::MyApplication(const Arguments& arguments):
     GL::Renderer::setClearColor(_clearColor);
 
     _meshCube = MeshTools::compile(Primitives::cubeSolid());
+    _meshPlane = MeshTools::compile(Primitives::planeSolid());
+
+    _sw.start();
 }
 
-void MyApplication::drawEvent()
+void MyApplication::update()
 {
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
     GL::defaultFramebuffer.clearDepth(1.0f);
@@ -184,8 +199,18 @@ void MyApplication::drawEvent()
     GL::Renderer::disable(GL::Renderer::Feature::DepthTest);
 
     _imgui.drawFrame();
+}
 
-    swapBuffers();
+void MyApplication::drawEvent()
+{
+    _elapsed = _sw.getElapsedTime();
+    if (_elapsed > 0.016666) {
+        _sw.start();
+
+        update();
+        swapBuffers();
+    }
+
     redraw();
 }
 
