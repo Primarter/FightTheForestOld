@@ -42,11 +42,32 @@ using namespace Math::Literals;
 
 typedef SceneGraph::Object<SceneGraph::MatrixTransformation3D> Object3D;
 
+/* components */
 struct Transform
 {
     Vector3 position;
     Vector3 rotation;
     Vector3 scale;
+};
+
+/* singletons components */
+struct Camera
+{
+    Vector3 position;
+    Vector3 rotation; // pitch, yaw, roll
+
+    Matrix4 view;
+    Matrix4 projection;
+};
+
+// struct Events
+// {
+//     std::map<Platform::Application::KeyEvent::Key, bool> keys;
+// };
+
+struct Event
+{
+    Platform::Application::KeyEvent::Key key;
 };
 
 class MyApplication: public Platform::Application
@@ -75,6 +96,7 @@ class MyApplication: public Platform::Application
 
         ImGuiIntegration::Context _imgui{NoCreate};
         std::map<KeyEvent::Key, bool> _keys;
+        // const Events *_events;
 
         Color4 _clearColor = {0.3, 0.3, 0.3, 1.0};
 
@@ -121,70 +143,102 @@ MyApplication::MyApplication(const Arguments& arguments):
     _meshCube = MeshTools::compile(Primitives::cubeSolid());
 }
 
+/* ECS initialization */
 void MyApplication::setup()
 {
-    /* ECS initialization */
-    auto camera = _world.entity("Camera")
-        .set<Transform>({
-            {0.0, 0.0, 0.0},
-            {0.0, 0.0, 0.0},
-            {1.0, 1.0, 1.0}});
-        // .set<Object3D>();
-        // .set<SceneGraph::Camera3D>();
+    // _world.set<Events>({});
+    _world.set<Camera>({
+        {0.0f, 0.0f, 0.0f},
+        {0.0f, 0.0f, 0.0f},
+        Matrix4({}),
+        Matrix4::perspectiveProjection(60.0_degf, 1.0f, 0.1f, 100.0f)
+    });
 
-        // _camera{_cameraObject}
-        // Object3D _cameraObject;
-        // SceneGraph::Camera3D _camera;
+    // _world.set<Event>({Platform::Application::KeyEvent::Key::Z});
 
-        // _world.entity("MyEntity")
-        //     .set<Position>({0, 0})
-        //     .set<Velocity>({1, 1});
+    /* events */
+    // _world.system<Events>()
+    //     .kind(flecs::PreUpdate)
+    //     .arg(1).inout(flecs::InOut).singleton()
+    //     .iter([](flecs::iter it, Events *events) {
+
+            // Debug{} << "Hoy";
+        // });
+
+    /* camera movements, will not run if no Event entity */
+    /* Camera is singleton and event is a list */
+    _world.system<Camera, Event>()
+        .kind(flecs::PreUpdate)
+        .arg(1).inout(flecs::InOut).singleton()
+        .iter([](flecs::iter it, Camera *camera, Event *event) {
+
+            Debug{} << "Hey";
+
+            const float yaw = camera->rotation.y();
+
+            for (auto i : it) {
+                if (event[i].key == KeyEvent::Key::W) {
+                    camera->position.x() += cosf(yaw + Constants::piHalf()) * 0.2f;
+                    camera->position.z() += sinf(yaw + Constants::piHalf()) * 0.2f;
+                }
+                else if (event[i].key == KeyEvent::Key::S) {
+                    camera->position.x() -= cosf(yaw + Constants::piHalf()) * 0.2f;
+                    camera->position.z() -= sinf(yaw + Constants::piHalf()) * 0.2f;
+                }
+                else if (event[i].key == KeyEvent::Key::A) {
+                    camera->position.x() += cosf(yaw) * 0.2f;
+                    camera->position.z() += sinf(yaw) * 0.2f;
+                }
+                else if (event[i].key == KeyEvent::Key::D) {
+                    camera->position.x() -= cosf(yaw) * 0.2f;
+                    camera->position.z() -= sinf(yaw) * 0.2f;
+                }
+                else if (event[i].key == KeyEvent::Key::Q){
+                    camera->position.y() += 0.2f;
+                }
+                else if (event[i].key == KeyEvent::Key::E) {
+                    camera->position.y() -= 0.2f;
+                }
+
+                else if(event[i].key == KeyEvent::Key::Right) {
+                    camera->rotation.y() += 0.04f;
+                }
+                else if (event[i].key == KeyEvent::Key::Left) {
+                    camera->rotation.y() -= 0.04f;
+                }
+                else if(event[i].key == KeyEvent::Key::Up) {
+                    camera->rotation.x() -= 0.02f;
+                }
+                else if (event[i].key == KeyEvent::Key::Down) {
+                    camera->rotation.x() += 0.02f;
+                }
+            }
+            // Debug{} << camera->rotation.y();
+
+            Matrix4 mx = Matrix4::rotation(Rad{camera->rotation.x()}, {0.0f, 0.0f, 1.0f});
+            Matrix4 my = Matrix4::rotation(Rad{camera->rotation.y()}, {0.0f, 1.0f, 0.0f});
+            Matrix4 mz = Matrix4::rotation(Rad{camera->rotation.z()}, {1.0f, 0.0f, 0.0f});
+
+            Matrix3 rotation = Matrix3{mx * my * mz};
+
+            camera->view = Matrix4::from(rotation, camera->position);
+
+        });
+
     _world.set_target_fps(60);
 }
 
 void MyApplication::drawEvent()
 {
+    // add all key press event as entity
+
+    _world.progress();
+
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
     GL::defaultFramebuffer.clearDepth(1.0f);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
-
-    const float yaw = _cameraRotation.x();
-
-    if (_keys[KeyEvent::Key::W]) {
-        _cameraPosition.x() += cosf(yaw + Constants::piHalf()) * 0.2f;
-        _cameraPosition.z() += sinf(yaw + Constants::piHalf()) * 0.2f;
-    }
-    if (_keys[KeyEvent::Key::S]) {
-        _cameraPosition.x() -= cosf(yaw + Constants::piHalf()) * 0.2f;
-        _cameraPosition.z() -= sinf(yaw + Constants::piHalf()) * 0.2f;
-    }
-    if (_keys[KeyEvent::Key::A]) {
-        _cameraPosition.x() += cosf(yaw) * 0.2f;
-        _cameraPosition.z() += sinf(yaw) * 0.2f;
-    }
-    if (_keys[KeyEvent::Key::D]) {
-        _cameraPosition.x() -= cosf(yaw) * 0.2f;
-        _cameraPosition.z() -= sinf(yaw) * 0.2f;
-    }
-    if (_keys[KeyEvent::Key::Q]){
-        _cameraPosition.y() += 0.2f;
-    }
-    if (_keys[KeyEvent::Key::E]) {
-        _cameraPosition.y() -= 0.2f;
-    }
-
-    if(_keys[KeyEvent::Key::Right]) {
-        _cameraRotation.x() += 0.04f;
-    } else if (_keys[KeyEvent::Key::Left]) {
-        _cameraRotation.x() -= 0.04f;
-    }
-    if(_keys[KeyEvent::Key::Up]) {
-        _cameraRotation.y() -= 0.02f;
-    } else if (_keys[KeyEvent::Key::Down]) {
-        _cameraRotation.y() += 0.02f;
-    }
 
     _cameraObject
         .resetTransformation()
@@ -249,6 +303,8 @@ void MyApplication::keyReleaseEvent(KeyEvent& event) {
 
     KeyEvent::Key key = event.key();
     _keys[key] = false;
+    // _world.get<Events>()->keys[key] = false;
+    // _events->keys[key] = false;
 }
 
 void MyApplication::mousePressEvent(MouseEvent& event) {
