@@ -50,6 +50,12 @@ struct Transform
     Vector3 scale;
 };
 
+struct Event
+{
+    Platform::Application::KeyEvent::Key key;
+};
+
+
 /* singletons components */
 struct Camera
 {
@@ -60,15 +66,6 @@ struct Camera
     Matrix4 projection;
 };
 
-// struct Events
-// {
-//     std::map<Platform::Application::KeyEvent::Key, bool> keys;
-// };
-
-struct Event
-{
-    Platform::Application::KeyEvent::Key key;
-};
 
 class MyApplication: public Platform::Application
 {
@@ -96,7 +93,6 @@ class MyApplication: public Platform::Application
 
         ImGuiIntegration::Context _imgui{NoCreate};
         std::map<KeyEvent::Key, bool> _keys;
-        // const Events *_events;
 
         Color4 _clearColor = {0.3, 0.3, 0.3, 1.0};
 
@@ -146,7 +142,6 @@ MyApplication::MyApplication(const Arguments& arguments):
 /* ECS initialization */
 void MyApplication::setup()
 {
-    // _world.set<Events>({});
     _world.set<Camera>({
         {0.0f, 0.0f, 0.0f},
         {0.0f, 0.0f, 0.0f},
@@ -156,16 +151,6 @@ void MyApplication::setup()
 
     // _world.set<Event>({Platform::Application::KeyEvent::Key::Z});
 
-    /* events */
-    // _world.system<Events>()
-    //     .kind(flecs::PreUpdate)
-    //     .arg(1).inout(flecs::InOut).singleton()
-    //     .iter([](flecs::iter it, Events *events) {
-
-            // Debug{} << "Hoy";
-        // });
-
-
     /* camera movements, will not run if no Event entity */
     /* Camera is singleton and event is a list */
     _world.system<Camera, Event>()
@@ -173,7 +158,7 @@ void MyApplication::setup()
         .arg(1).inout(flecs::InOut).singleton()
         .iter([](flecs::iter it, Camera *camera, Event *event) {
 
-            Debug{} << "Hey";
+            // Debug{} << "Hey";
 
             const float yaw = camera->rotation.y();
 
@@ -214,7 +199,6 @@ void MyApplication::setup()
                     camera->rotation.x() += 0.02f;
                 }
             }
-            // Debug{} << camera->rotation.y();
 
             Matrix4 mx = Matrix4::rotation(Rad{camera->rotation.x()}, {0.0f, 0.0f, 1.0f});
             Matrix4 my = Matrix4::rotation(Rad{camera->rotation.y()}, {0.0f, 1.0f, 0.0f});
@@ -239,9 +223,14 @@ void MyApplication::drawEvent()
 
     _world.progress();
 
-    // TODO: remove all entity with Event
+    // _world.delete_with<Event>(); // not in 2.4.7
+    _world.defer_begin();
+    _world.each<Event>([](flecs::entity e, Event&) {
+        e.destruct();
+    });
+    _world.defer_end();
 
-    // _world::remove
+    /* --- */
 
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
     GL::defaultFramebuffer.clearDepth(1.0f);
