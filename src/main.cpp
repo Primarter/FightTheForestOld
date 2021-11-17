@@ -165,6 +165,7 @@ void MyApplication::setup()
             // Debug{} << "Hoy";
         // });
 
+
     /* camera movements, will not run if no Event entity */
     /* Camera is singleton and event is a list */
     _world.system<Camera, Event>()
@@ -222,7 +223,6 @@ void MyApplication::setup()
             Matrix3 rotation = Matrix3{mx * my * mz};
 
             camera->view = Matrix4::from(rotation, camera->position);
-
         });
 
     _world.set_target_fps(60);
@@ -230,9 +230,18 @@ void MyApplication::setup()
 
 void MyApplication::drawEvent()
 {
-    // add all key press event as entity
+    // add all key pressed as entity
+    for (auto const &key : _keys) {
+        if (key.second) {
+            _world.entity().set<Event>({key.first});
+        }
+    }
 
     _world.progress();
+
+    // TODO: remove all entity with Event
+
+    // _world::remove
 
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color);
     GL::defaultFramebuffer.clearDepth(1.0f);
