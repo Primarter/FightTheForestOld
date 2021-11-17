@@ -2,15 +2,14 @@
 #include <Magnum/Platform/GlfwApplication.h>
 #include <Magnum/ImGuiIntegration/Context.hpp>
 
-// #include <Magnum/GL/Version.h>
-// #include <Magnum/GL/Buffer.h>
-// #include <Magnum/GL/Context.h>
-
+#include <Magnum/GL/Version.h>
+#include <Magnum/GL/Buffer.h>
+#include <Magnum/GL/Context.h>
 // #include <Magnum/GL/Mesh.h>
-// #include <Magnum/GL/Shader.h>
+#include <Magnum/GL/Shader.h>
 #include <Magnum/GL/Extensions.h>
 #include <Magnum/GL/Renderer.h>
-// #include <Magnum/GL/AbstractShaderProgram.h>
+#include <Magnum/GL/AbstractShaderProgram.h>
 // #include <Magnum/Shaders/VertexColorGL.h>
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Primitives/Cube.h>
@@ -45,31 +44,6 @@ using namespace Magnum;
 using namespace Math::Literals;
 
 typedef SceneGraph::Object<SceneGraph::MatrixTransformation3D> Object3D;
-
-/* components */
-struct Transform
-{
-    Vector3 position;
-    Vector3 rotation;
-    Vector3 scale;
-};
-
-struct Event
-{
-    Platform::Application::KeyEvent::Key key;
-};
-
-
-/* singletons components */
-struct Camera
-{
-    Vector3 position;
-    Vector3 rotation; // pitch, yaw, roll
-
-    Matrix4 view;
-    Matrix4 projection;
-};
-
 
 class MyApplication: public Platform::Application
 {
@@ -154,6 +128,42 @@ void MyApplication::update()
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
 
+    const float yaw = _cameraRotation.x();
+
+    if (_keys[KeyEvent::Key::W]) {
+        _cameraPosition.x() += cosf(yaw + Constants::piHalf()) * 0.2f;
+        _cameraPosition.z() += sinf(yaw + Constants::piHalf()) * 0.2f;
+    }
+    if (_keys[KeyEvent::Key::S]) {
+        _cameraPosition.x() -= cosf(yaw + Constants::piHalf()) * 0.2f;
+        _cameraPosition.z() -= sinf(yaw + Constants::piHalf()) * 0.2f;
+    }
+    if (_keys[KeyEvent::Key::A]) {
+        _cameraPosition.x() += cosf(yaw) * 0.2f;
+        _cameraPosition.z() += sinf(yaw) * 0.2f;
+    }
+    if (_keys[KeyEvent::Key::D]) {
+        _cameraPosition.x() -= cosf(yaw) * 0.2f;
+        _cameraPosition.z() -= sinf(yaw) * 0.2f;
+    }
+    if (_keys[KeyEvent::Key::Q]){
+        _cameraPosition.y() += 0.2f;
+    }
+    if (_keys[KeyEvent::Key::E]) {
+        _cameraPosition.y() -= 0.2f;
+    }
+
+    if(_keys[KeyEvent::Key::Right]) {
+        _cameraRotation.x() += 0.04f;
+    } else if (_keys[KeyEvent::Key::Left]) {
+        _cameraRotation.x() -= 0.04f;
+    }
+    if(_keys[KeyEvent::Key::Up]) {
+        _cameraRotation.y() -= 0.02f;
+    } else if (_keys[KeyEvent::Key::Down]) {
+        _cameraRotation.y() += 0.02f;
+    }
+
     _cameraObject
         .resetTransformation()
         .translate(_cameraPosition)
@@ -227,8 +237,6 @@ void MyApplication::keyReleaseEvent(KeyEvent& event) {
 
     KeyEvent::Key key = event.key();
     _keys[key] = false;
-    // _world.get<Events>()->keys[key] = false;
-    // _events->keys[key] = false;
 }
 
 void MyApplication::mousePressEvent(MouseEvent& event) {
