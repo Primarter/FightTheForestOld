@@ -10,3 +10,6 @@
 [submodule "magnum-integration"]
 	path = magnum-integration
 	url = https://github.com/mosra/magnum-integration
+[submodule "bullet3"]
+	path = bullet3
+	url = https://github.com/bulletphysics/bullet3.git

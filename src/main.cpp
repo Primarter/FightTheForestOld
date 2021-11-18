@@ -14,8 +14,8 @@
 #include <Magnum/Shaders/PhongGL.h>
 #include <Magnum/Primitives/Cube.h>
 #include <Magnum/Primitives/Plane.h>
+
 #include <Magnum/Math/Color.h>
-// #include <Magnum/Math/Constants.h>
 
 #include <Magnum/SceneGraph/Camera.h>
 // #include <Magnum/SceneGraph/Object.h>
@@ -171,13 +171,21 @@ void MyApplication::update()
         .rotateX(Rad{_cameraRotation.y()});
 
     Color4 color{1.0f, 1.0f, 1.0f, 1.0f};
+    // _shader
+    //     .setLightPositions({{4.4f, 10.0f, 0.75f, 0.0f}})
+    //     .setDiffuseColor(color)
+    //     .setAmbientColor(Color3::fromHsv({color.hue(), 1.0f, 0.3f}))
+    //     .setTransformationMatrix(_cameraObject.transformation())
+    //     .setProjectionMatrix(_camera.projectionMatrix())
+    //     .draw(_meshCube);
+
     _shader
         .setLightPositions({{4.4f, 10.0f, 0.75f, 0.0f}})
         .setDiffuseColor(color)
         .setAmbientColor(Color3::fromHsv({color.hue(), 1.0f, 0.3f}))
         .setTransformationMatrix(_cameraObject.transformation())
         .setProjectionMatrix(_camera.projectionMatrix())
-        .draw(_meshCube);
+        .draw(_meshPlane);
 
     _imgui.newFrame();
     {
@@ -205,12 +213,11 @@ void MyApplication::drawEvent()
 {
     _elapsed = _sw.getElapsedTime();
     if (_elapsed > 0.01666) {
-        _sw.start();
+        _sw.restart();
 
         update();
         swapBuffers();
     }
-
     redraw();
 }
 
