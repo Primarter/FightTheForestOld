@@ -263,9 +263,6 @@ void MyApplication::update()
     //                     Vector4{pointLight1.translation(), 1.0f},
     //                     Vector4{pointLight2.translation(), 1.0f}})
 
-    // _shader.setAmbientColor(0x111111_rgbf)
-    //     .setSpecularColor(0x330000_rgbf);
-
     Matrix4 modelRotation =
         Matrix4::translation({2.0f, 0.0f, 0.0f}) *
         Matrix4::rotationX(30.0_degf) *
@@ -273,13 +270,12 @@ void MyApplication::update()
 
     _shader
         .setLightPositions({cameraTransform.inverted() * Vector4{directionalLight.up(), 0.0f}})
-        // .setShininess(1.0f)
-        .setSpecularColor({1.0, 1.0, 1.0, 1.0})
-        .setDiffuseColor(color)
-        .setAmbientColor(Color3::fromHsv({color.hue(), 1.0f, 0.3f}))
-        // .setNormalMatrix(cameraTransform.inverted().normalMatrix())
+        .setShininess(100.0f)
+        .setSpecularColor({0.f, 0.f, 0.f, 1.f})
+        // .setDiffuseColor(color)
+        .setAmbientColor({0.2f, 0.2f, 0.2f, 1.0f})
+        // .setAmbientColor(Color3::fromHsv({color.hue(), 1.0f, 0.3f}))
         .setProjectionMatrix(_camera.projectionMatrix());
-        // .setProjectionMatrix(_projection)
 
     _shader
         .setNormalMatrix(cameraTransform.inverted().normalMatrix())
@@ -290,8 +286,6 @@ void MyApplication::update()
         .setNormalMatrix((cameraTransform.inverted() * modelRotation).normalMatrix())
         .setTransformationMatrix(cameraTransform.inverted() * modelRotation)
         .draw(_meshCube);
-        // .draw(_meshPlane);
-
 
     _imgui.newFrame();
     {
