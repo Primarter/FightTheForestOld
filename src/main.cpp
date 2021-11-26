@@ -43,6 +43,7 @@
 #include <thread>
 
 #include "StopWatch.hpp"
+#include "utils.hpp"
 // #include "WallShader.hpp"
 
 #define CELL_SIZE (1.0f)
@@ -73,7 +74,6 @@ struct WallInstanceData {
     Matrix3x3 normal;
     Color3 color; // rgb
 };
-
 
 class MyApplication: public Platform::Application
 {
@@ -108,6 +108,7 @@ class MyApplication: public Platform::Application
 
         Containers::Array<WallInstanceData> _wallInstanceData;
         GL::Buffer _wallInstanceBuffer{NoCreate};
+        int _count = 1;
 
         Shaders::PhongGL _shader{NoCreate};
         GL::Mesh _meshPlane;
@@ -130,13 +131,16 @@ MyApplication::MyApplication(const Arguments& arguments):
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::geometry_shader4);
     MAGNUM_ASSERT_GL_EXTENSION_SUPPORTED(GL::Extensions::ARB::draw_instanced);
 
-    _projection = Matrix4::perspectiveProjection(60.0_degf,
-            Vector2{framebufferSize()}.aspectRatio(), 0.1f, 1000.0f);
+    _projection = Matrix4::perspectiveProjection(51.45_degf*Vector2{framebufferSize()}.aspectRatio(),
+        Vector2{framebufferSize()}.aspectRatio(), 0.1f, 1000.0f);
 
     _camera
         .setAspectRatioPolicy(SceneGraph::AspectRatioPolicy::Extend)
         .setProjectionMatrix(Matrix4::perspectiveProjection(60.0_degf, 1.0f, 0.1f, 1000.0f))
         .setViewport(GL::defaultFramebuffer.viewport().size());
+
+    Debug{} << _projection;
+    Debug{} << _camera.projectionMatrix();
 
     _imgui = ImGuiIntegration::Context(Vector2{windowSize()}/dpiScaling(),
         windowSize(), framebufferSize());
@@ -152,15 +156,14 @@ MyApplication::MyApplication(const Arguments& arguments):
     setSwapInterval(1); // vsync on
     GL::Renderer::setClearColor(_clearColor);
 
-    _shader = Shaders::PhongGL{};
-        // Shaders::PhongGL::Flag::
-        // Shaders::PhongGL::Flag::VertexColor |
-        // Shaders::PhongGL::Flag::InstancedTransformation};
+    _shader = Shaders::PhongGL{
+        Shaders::PhongGL::Flag::VertexColor |
+        Shaders::PhongGL::Flag::InstancedTransformation};
 
     _meshCube = MeshTools::compile(Primitives::cubeSolid());
     _meshPlane = MeshTools::compile(Primitives::planeSolid());
 
-    _wallInstanceData = Containers::Array<WallInstanceData>{NoInit, 10000};
+    _wallInstanceData = Containers::Array<WallInstanceData>{NoInit, 100000};
     _wallInstanceBuffer = GL::Buffer{};
 
     // for (int i = 0 ; i < 10000 ; ++i) {
@@ -168,23 +171,29 @@ MyApplication::MyApplication(const Arguments& arguments):
     //     // Containers::arrayAppend(_wallInstanceData, {m, Color3::cyan(), {}});
     // }
 
-    // int i = 0;
-    // for (auto &instance : _wallInstanceData) {
-    //     instance.transformation = Matrix4::translation({4.f*floorf(i/100), 4.0f*(i%10), -i%100});
-    //     instance.normal = instance.transformation.normalMatrix();
-    //     instance.color = Color3::cyan();
-    //     i += 1;
-    // }
+    int i = 0;
+    for (auto &instance : _wallInstanceData) {
+        instance.transformation =
+            Matrix4::translation({4.f*floorf(i/1000), 4.0f*(i%10), -i%1000}) *
+            Matrix4::rotationX(Rad{randUniform()}) *
+            Matrix4::rotationY(Rad{randUniform()}) *
+            Matrix4::rotationZ(Rad{randUniform()});
 
-    // _meshCube
-    //     .setInstanceCount(_wallInstanceData.size())
-    //     .addVertexBufferInstanced(_wallInstanceBuffer, 1, 0,
-    //         Shaders::PhongGL::TransformationMatrix{},
-    //         Shaders::PhongGL::NormalMatrix{},
-    //         Shaders::PhongGL::Color3{}
-    //     );
+        instance.normal = instance.transformation.normalMatrix();
+        instance.color = Color3::fromHsv(ColorHsv{Deg{rand() % 360}, 1.0f, 1.0f});
+        i += 1;
+    }
 
-    // _wallInstanceBuffer.setData(_wallInstanceData, GL::BufferUsage::DynamicDraw);
+    _meshCube
+        // .setInstanceCount(_wallInstanceData.size())
+        .setInstanceCount(_count)
+        .addVertexBufferInstanced(_wallInstanceBuffer, 1, 0,
+            Shaders::PhongGL::TransformationMatrix{},
+            Shaders::PhongGL::NormalMatrix{},
+            Shaders::PhongGL::Color3{}
+        );
+
+    _wallInstanceBuffer.setData(_wallInstanceData, GL::BufferUsage::DynamicDraw);
     // _meshPlane
     //     .setInstanceCount(_wallInstanceData.size())
     //     .addVertexBufferInstanced(_wallInstanceBuffer, 1, 0,
@@ -202,7 +211,7 @@ void MyApplication::update()
     GL::defaultFramebuffer.clearDepth(1.0f);
 
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
-    // GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+    GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
 
     const float yaw = _cameraRotation.x();
 
@@ -268,24 +277,26 @@ void MyApplication::update()
         Matrix4::rotationX(30.0_degf) *
         Matrix4::rotationZ(15.0_degf);
 
+    _meshCube.setInstanceCount(_count);
+
     _shader
         .setLightPositions({cameraTransform.inverted() * Vector4{directionalLight.up(), 0.0f}})
         .setShininess(100.0f)
-        .setSpecularColor({0.f, 0.f, 0.f, 1.f})
+        .setSpecularColor({1.f, 1.f, 1.f, 1.f})
         // .setDiffuseColor(color)
         .setAmbientColor({0.2f, 0.2f, 0.2f, 1.0f})
         // .setAmbientColor(Color3::fromHsv({color.hue(), 1.0f, 0.3f}))
-        .setProjectionMatrix(_camera.projectionMatrix());
+        .setProjectionMatrix(_projection);
 
     _shader
         .setNormalMatrix(cameraTransform.inverted().normalMatrix())
         .setTransformationMatrix(cameraTransform.inverted())
         .draw(_meshCube);
 
-    _shader
-        .setNormalMatrix((cameraTransform.inverted() * modelRotation).normalMatrix())
-        .setTransformationMatrix(cameraTransform.inverted() * modelRotation)
-        .draw(_meshCube);
+    // _shader
+    //     .setNormalMatrix((cameraTransform.inverted() * modelRotation).normalMatrix())
+    //     .setTransformationMatrix(cameraTransform.inverted() * modelRotation)
+    //     .draw(_meshCube);
 
     _imgui.newFrame();
     {
@@ -294,6 +305,7 @@ void MyApplication::update()
             GL::Renderer::setClearColor(_clearColor);
         ImGui::Text("average %.3f ms/frame (%.1f FPS)",
             1000.0/Double(ImGui::GetIO().Framerate), Double(ImGui::GetIO().Framerate));
+        ImGui::SliderInt("COUNT", &_count, 1, 100000);
     }
 
     /* Update application cursor */
