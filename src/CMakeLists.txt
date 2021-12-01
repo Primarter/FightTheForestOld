@@ -29,6 +29,9 @@ target_link_libraries(MyApplication PRIVATE
     MagnumIntegration::ImGui
     MagnumIntegration::Bullet
     Bullet::Dynamics)
+    # Bullet::LinearMath
+    # Bullet::Collision
+    # Bullet::SoftBody)
 
 # Disable Bullet tests and demos
 set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)

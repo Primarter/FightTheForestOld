@@ -21,25 +21,22 @@
 #include <Magnum/Math/Functions.h>
 
 #include <Magnum/SceneGraph/Object.h>
-
+#include <Magnum/SceneGraph/MatrixTransformation3D.h>
 // #include <Magnum/SceneGraph/Camera.h>
 // #include <Magnum/SceneGraph/Drawable.h>
 // #include <Magnum/SceneGraph/MatrixTransformation3D.h>
 // #include <Magnum/SceneGraph/Scene.h>
 
-// #include <Magnum/SceneGraph/DualQuaternionTransformation.h>
-#include <Magnum/SceneGraph/MatrixTransformation3D.h>
-
 #include <Magnum/Trade/MeshData.h>
+#include <Magnum/MeshTools/Compile.h>
 // #include <Magnum/MeshTools/Interleave.h>
 // #include <Magnum/MeshTools/CompressIndices.h>
-#include <Magnum/MeshTools/Compile.h>
 
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/GrowableArray.h>
-// #include <Corrade/Containers/Optional.h>
 #include <Corrade/Containers/Reference.h>
 #include <Corrade/Containers/Pointer.h>
+// #include <Corrade/Containers/Optional.h>
 // #include <Corrade/Utility/Arguments.h>
 // #include <Corrade/Utility/Resource.h>
 
@@ -48,7 +45,10 @@
 #include <Magnum/BulletIntegration/DebugDraw.h>
 
 #include <btBulletDynamicsCommon.h>
+#include <btBulletCollisionCommon.h>
 
+// #include <btCharacterControllerInterface.h>
+// #include <btKinematicCharacterController.h>
 
 #include <map>
 
@@ -100,6 +100,7 @@ class RigidBody: public Object3D {
             _bRigidBody.emplace(btRigidBody::btRigidBodyConstructionInfo{
                 mass, &motionState->btMotionState(), bShape, bInertia});
             // _bRigidBody->forceActivationState(DISABLE_DEACTIVATION);
+            _bRigidBody->setFriction(1.0f);
             bWorld.addRigidBody(_bRigidBody.get());
         }
 
@@ -191,6 +192,9 @@ class MyApplication: public Platform::Application
         btBoxShape _bGroundShape{{10.0f, 0.5f, 10.0f}};
 
         RigidBody *_rigidBody;
+        bool _physicRunning = false;
+
+        // bt
 };
 
 MyApplication::MyApplication(const Arguments& arguments):
@@ -426,7 +430,9 @@ void MyApplication::update()
         _cameraRotation.x() = Math::clamp(_cameraRotation.x(), -Constants::piHalf(), Constants::piHalf());
     }
 
-    _bWorld.stepSimulation(_timeline.previousFrameDuration(), 1);
+    if (_physicRunning) {
+        _bWorld.stepSimulation(_timeline.previousFrameDuration(), 1);
+    }
 
     Matrix4 cameraTransform =
         Matrix4::translation(-_cameraPosition) *
@@ -464,7 +470,8 @@ void MyApplication::update()
             GL::Renderer::setClearColor(_clearColor);
         ImGui::Text("average %.3f ms/frame (%.1f FPS)",
             1000.0/Double(ImGui::GetIO().Framerate), Double(ImGui::GetIO().Framerate));
-        // ImGui::SliderInt("COUNT", &_count, 1, 100000);
+        // ImGui::SliderInt("COUNT", nullptr, 1, 100000);
+        ImGui::Checkbox("PhysicRunning", &_physicRunning);
     }
 
     /* Update application cursor */
