@@ -1,6 +1,7 @@
 find_package(Magnum REQUIRED GlfwApplication)
 find_package(MagnumIntegration REQUIRED ImGui)
 find_package(MagnumIntegration REQUIRED Bullet)
+find_package(Bullet REQUIRED Dynamics)
 
 find_package(Corrade REQUIRED Main)
 
@@ -26,7 +27,8 @@ target_link_libraries(MyApplication PRIVATE
     Magnum::Shaders
     Magnum::Magnum
     MagnumIntegration::ImGui
-    MagnumIntegration::Bullet)
+    MagnumIntegration::Bullet
+    Bullet::Dynamics)
 
 # Disable Bullet tests and demos
 set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
