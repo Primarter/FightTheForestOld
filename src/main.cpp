@@ -95,6 +95,8 @@ class RigidBody: public Object3D {
             if(!Math::TypeTraits<Float>::equals(mass, 0.0f))
                 bShape->calculateLocalInertia(mass, bInertia);
 
+            // _bRigidBody->setLinearFactor(btVector3(1.0f, 0.0f, 1.0f));
+
             /* Bullet rigid body setup */
             auto* motionState = new BulletIntegration::MotionState{*this}; // needs an Object3D
             _bRigidBody.emplace(btRigidBody::btRigidBodyConstructionInfo{
